@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>העסק הקטן והמוצלח שלי | לוח בקרה</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap">
+  <style>
+    body { font-family: 'Heebo', sans-serif; background-color: #f8fafc; color: #1e293b; }
+    .gold-gradient { background: linear-gradient(135deg, #d4af37 0%, #b89728 100%); }
+    .gold-text { color: #b89728; }
+    .light-card { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
+    @media print {
+      body * { visibility: hidden; }
+      #printablePoster, #printablePoster * { visibility: visible; }
+      #printablePoster {
+        position: fixed;
+        inset: 0;
+        background: white !important;
+        color: black !important;
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen selection:bg-amber-100 selection:text-amber-900">
+
+  <header class="border-b border-slate-200 bg-white/90 sticky top-0 z-40 backdrop-blur no-print">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl gold-gradient flex items-center justify-center font-black text-white text-xl shadow-md shadow-amber-500/20">✦</div>
+        <div>
+          <span class="font-black text-lg text-slate-900 tracking-wide">העסק הקטן והמוצלח שלי</span>
+          <span class="block text-[11px] gold-text font-bold tracking-widest uppercase">ניהול וצמיחה עסקית</span>
+        </div>
+      </div>
+      <button onclick="openModalForNew()" class="gold-gradient hover:opacity-95 text-white px-5 py-2.5 rounded-xl text-sm font-extrabold shadow-md shadow-amber-500/20 transition transform active:scale-95">
+        + הוספת עסק חדש
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-10 space-y-10 no-print">
+    <!-- מדדים ראשיים -->
+    <section class="grid grid-cols-1 sm:grid-cols-4 gap-5">
+      <div class="light-card rounded-3xl p-6 relative overflow-hidden">
+        <div class="text-slate-500 text-xs font-semibold tracking-wider uppercase">עסקים פעילים</div>
+        <div class="text-3xl font-black text-slate-900 mt-2" id="kpiTotalBusinesses">0</div>
+      </div>
+      <div class="light-card rounded-3xl p-6 relative overflow-hidden">
+        <div class="text-slate-500 text-xs font-semibold tracking-wider uppercase">סה"כ אינטראקציות</div>
+        <div class="text-3xl font-black text-indigo-600 mt-2" id="kpiTotalSent">0</div>
+      </div>
+      <div class="light-card rounded-3xl p-6 relative overflow-hidden">
+        <div class="text-slate-500 text-xs font-semibold tracking-wider uppercase">הפניות לביקורת (גוגל/איזי)</div>
+        <div class="text-3xl font-black text-emerald-600 mt-2" id="kpiPositiveReviews">0</div>
+      </div>
+      <div class="light-card rounded-3xl p-6 relative overflow-hidden">
+        <div class="text-slate-500 text-xs font-semibold tracking-wider uppercase">משובים פנימיים שנבלמו</div>
+        <div class="text-3xl font-black text-rose-600 mt-2" id="kpiPendingFeedbacks">0</div>
+      </div>
+    </section>
+
+    <!-- רשימת עסקים -->
+    <section class="space-y-5">
+      <h2 class="text-xl font-black text-slate-900 tracking-wide">העסקים שלך</h2>
+      <div id="businessesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </section>
+
+    <!-- טבלת מעקב -->
+    <section class="light-card rounded-3xl p-7 space-y-5">
+      <h2 class="text-lg font-black text-slate-900 tracking-wide">מעקב דירוגים ופרסום בפלטפורמות</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-right text-sm">
+          <thead class="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="p-4 rounded-r-xl">לקוח / מקור</th>
+              <th class="p-4">עסק</th>
+              <th class="p-4">דירוג</th>
+              <th class="p-4">מה כתב הלקוח</th>
+              <th class="p-4">פלטפורמה שנבחרה</th>
+              <th class="p-4 rounded-l-xl">סטטוס</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- טבלת משובים פנימיים -->
+    <section class="light-card rounded-3xl p-7 space-y-5">
+      <h2 class="text-lg font-black text-slate-900 tracking-wide">משובים פנימיים לטיפול (נחסמו מפרסום פומבי)</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-right text-sm">
+          <thead class="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="p-4 rounded-r-xl">שם / מקור</th>
+              <th class="p-4">עסק</th>
+              <th class="p-4">סוג תקלה</th>
+              <th class="p-4">פירוט המשוב</th>
+              <th class="p-4 rounded-l-xl">סטטוס</th>
+            </tr>
+          </thead>
+          <tbody id="feedbacksTableBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- חלונית הוספת / עריכת עסק -->
+  <div id="businessModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-3xl w-full max-w-lg p-8 space-y-6 max-h-[90vh] overflow-y-auto border border-slate-200 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+        <h3 class="text-xl font-black text-slate-900" id="modalTitle">הוספת עסק חדש</h3>
+        <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 flex items-center justify-center transition">✕</button>
+      </div>
+      <form id="businessForm" onsubmit="handleSaveBusiness(event)" class="space-y-4">
+        <input type="hidden" id="editBizId">
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">שם העסק *</label>
+          <input type="text" id="bizName" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:border-amber-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">קישור לביקורת בגוגל *</label>
+          <input type="url" id="bizGoogleUrl" required placeholder="https://g.page/r/.../review" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:border-amber-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">קישור לעמוד איזי (אופציונלי)</label>
+          <input type="url" id="bizEasyUrl" placeholder="https://easy.co.il/page/..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:border-amber-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">קישור לביקורות פייסבוק (אופציונלי)</label>
+          <input type="url" id="bizFacebookUrl" placeholder="https://facebook.com/.../reviews" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:border-amber-500 outline-none transition">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">טלפון מנהל (וואטסאפ) *</label>
+            <input type="tel" id="bizWhatsapp" required placeholder="0501234567" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:border-amber-500 outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">קוד קופון להטבה/פיצוי</label>
+            <input type="text" id="bizCoupon" value="THANKYOU10" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:border-amber-500 outline-none transition">
+          </div>
+        </div>
+
+        <div class="pt-4 flex justify-end gap-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal()" class="px-5 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-sm font-semibold transition">ביטול</button>
+          <button type="submit" id="saveBtn" class="gold-gradient text-white px-6 py-2.5 rounded-xl text-sm font-black shadow-md transition">שמור עסק</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- חלונית QR ושלט מעוצב להדפסה -->
+  <div id="qrModal" onclick="if(event.target === this) closeQrModal()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md p-6 space-y-5 max-h-[90vh] overflow-y-auto border border-slate-200 shadow-2xl">
+      <div class="flex justify-between items-center no-print sticky top-0 bg-white py-2 z-10 border-b border-slate-100">
+        <h3 class="text-lg font-black text-slate-900">שלט QR לדלפק העסק</h3>
+        <button type="button" onclick="closeQrModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 flex items-center justify-center font-bold transition">✕</button>
+      </div>
+
+      <!-- אזור הפוסטר להדפסה -->
+      <div id="printablePoster" class="bg-white text-slate-900 rounded-3xl p-8 text-center space-y-4 border-4 border-amber-500 shadow-lg">
+        <div class="text-amber-500 text-3xl tracking-widest">★★★★★</div>
+        <h2 class="text-2xl font-black text-slate-900" id="qrBizName">שם העסק</h2>
+        <p class="text-xs text-slate-600 font-medium leading-relaxed">
+          נהניתם מהשירות שלנו? 🥰<br>
+          סרקו את הברקוד עם מצלמת הנייד ושתפו חוות דעת בקלות בגוגל, באיזי או בפייסבוק!
+        </p>
+
+        <div class="flex justify-center py-2">
+          <div id="qrcodeContainer" class="p-3 bg-white border-2 border-slate-100 rounded-2xl inline-block shadow-inner"></div>
+        </div>
+
+        <div class="bg-slate-50 rounded-xl p-2.5 text-xs font-bold text-slate-700">
+          📱 פתחו מצלמה ⬅️ סרקו ⬅️ שתפו בשנייה
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2.5 no-print pt-2">
+        <div class="grid grid-cols-2 gap-2.5">
+          <button type="button" onclick="window.print()" class="py-3 gold-gradient text-white rounded-xl text-sm font-black shadow-md transition hover:opacity-95">
+            🖨️ הדפס שלט לדלפק
+          </button>
+          <button type="button" onclick="downloadQrImage()" class="py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-bold border border-slate-200 transition">
+            ⬇️ הורד תמונת QR
+          </button>
+        </div>
+        <button type="button" onclick="copyDirectQrLink()" class="py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-xs border border-slate-200 transition">
+          🔗 העתק קישור ישיר למסך המשוב
+        </button>
+        <button type="button" onclick="closeQrModal()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold transition mt-1">
+          ← סגור וחזור לדשבורד
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://pykdojfaukaiikjgirnk.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_i2YcUPaFRLfjBie8QTdO3A_XBZTfGqq";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let allBusinesses = [];
+    let currentQrUrl = "";
+    let currentQrBizName = "";
+
+    const platformBadge = {
+      google: '<span class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold border border-blue-200">🔵 Google</span>',
+      easy: '<span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-bold border border-emerald-200">🟢 איזי</span>',
+      facebook: '<span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-200">🔷 פייסבוק</span>'
+    };
+
+    async function loadDashboardData() {
+      const grid = document.getElementById('businessesGrid');
+      grid.innerHTML = `<div class="col-span-full text-slate-400 text-sm animate-pulse py-8 text-center">טוען את העסקים שלך... ✦</div>`;
+
+      try {
+        const [bizRes, ordersRes, feedbacksRes] = await Promise.all([
+          supabaseClient.from('businesses').select('*').order('created_at', { ascending: false }),
+          supabaseClient.from('orders').select('id, business_id, customer_name, rating, review_text, platform_selected, feedback_status, created_at, businesses(name)').order('created_at', { ascending: false }).limit(100),
+          supabaseClient.from('feedbacks').select('id, business_id, customer_name, issue_type, feedback_text, status, created_at, businesses(name)').order('created_at', { ascending: false }).limit(50)
+        ]);
+
+        allBusinesses = bizRes.data || [];
+        const oList = ordersRes.data || [];
+        const fList = feedbacksRes.data || [];
+
+        document.getElementById('kpiTotalBusinesses').textContent = allBusinesses.length;
+        document.getElementById('kpiTotalSent').textContent = oList.length;
+        document.getElementById('kpiPositiveReviews').textContent = oList.filter(o => o.feedback_status === 'clicked_platform').length;
+        document.getElementById('kpiPendingFeedbacks').textContent = fList.length;
+
+        if (allBusinesses.length === 0) {
+          grid.innerHTML = `<p class="text-slate-500 text-sm col-span-full text-center py-12 light-card rounded-3xl">אין עסקים עדיין. לחצי על "+ הוספת עסק חדש" למעלה כדי להתחיל.</p>`;
+        } else {
+          grid.innerHTML = allBusinesses.map(b => {
+            const bizOrders = oList.filter(o => o.business_id === b.id);
+            const bizClicks = bizOrders.filter(o => o.feedback_status === 'clicked_platform').length;
+            return `
+              <div class="light-card rounded-3xl p-6 space-y-5 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-amber-400 transition duration-300">
+                <div class="space-y-3">
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <h3 class="font-black text-slate-900 text-lg tracking-wide">${b.name}</h3>
+                      <div class="text-xs text-slate-500 mt-0.5">מנהל: ${b.manager_whatsapp || '-'}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-xl font-mono font-bold">${b.coupon_code || 'BIZ10'}</span>
+                      <button onclick="openModalForEdit('${b.id}')" title="ערוך עסק" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs transition border border-slate-200">✏️</button>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-wrap gap-1.5 pt-1 text-[11px]">
+                    ${b.google_review_url ? '<span class="bg-blue-50 px-2.5 py-1 rounded-lg text-blue-700 border border-blue-200">✓ גוגל</span>' : '<span class="bg-slate-100 px-2.5 py-1 rounded-lg text-slate-400">חסר גוגל</span>'}
+                    ${b.easy_review_url ? '<span class="bg-emerald-50 px-2.5 py-1 rounded-lg text-emerald-700 border border-emerald-200">✓ איזי</span>' : '<span class="bg-slate-100 px-2.5 py-1 rounded-lg text-slate-400">+ איזי</span>'}
+                    ${b.facebook_review_url ? '<span class="bg-indigo-50 px-2.5 py-1 rounded-lg text-indigo-700 border border-indigo-200">✓ פייסבוק</span>' : '<span class="bg-slate-100 px-2.5 py-1 rounded-lg text-slate-400">+ פייסבוק</span>'}
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 py-3 border-y border-slate-100 text-xs bg-slate-50 px-4 rounded-2xl">
+                  <div>
+                    <span class="text-slate-500">אינטראקציות:</span>
+                    <span class="font-black text-slate-900 mr-1">${bizOrders.length}</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500">עברו לפרסם:</span>
+                    <span class="font-black text-emerald-600 mr-1">${bizClicks}</span>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-2.5 text-xs pt-1">
+                  <button onclick="openQrModal('${b.id}')" class="w-full py-3 gold-gradient hover:opacity-95 text-white text-center rounded-2xl font-black transition shadow-md shadow-amber-500/10">
+                    🏁 קוד QR ושלט לדלפק העסק
+                  </button>
+                  <a href="share.html?biz_id=${b.id}" target="_blank" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-center rounded-2xl font-bold transition border border-slate-200 flex items-center justify-center gap-1.5">
+                    <span>📱 שליחה בוואטסאפ ללקוח</span> <span>↗</span>
+                  </a>
+                  <div class="grid grid-cols-2 gap-2">
+                    <a href="review-bridge.html?biz_id=${b.id}&source=qr" target="_blank" class="py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-center rounded-xl transition border border-slate-200">
+                       הגשת משוב ↗
+                    </a>
+                    <button onclick="openModalForEdit('${b.id}')" class="py-2 bg-slate-50 hover:bg-slate-100 text-amber-700 text-center rounded-xl transition border border-slate-200 font-semibold">
+                      ✏️ ערוך קישורים
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        const oBody = document.getElementById('ordersTableBody');
+        oBody.innerHTML = oList.length === 0
+          ? `<tr><td colspan="6" class="p-6 text-center text-slate-400 text-xs">טרם נרשמו פעולות במערכת.</td></tr>`
+          : oList.map(o => `
+              <tr class="hover:bg-slate-50/80 transition">
+                <td class="p-4 font-bold text-slate-900">${o.customer_name || 'סריקת QR במקום'}</td>
+                <td class="p-4 text-slate-600">${o.businesses?.name || '-'}</td>
+                <td class="p-4 text-amber-500 font-bold">${o.rating ? '★'.repeat(o.rating) : '-'}</td>
+                <td class="p-4 text-xs text-slate-600 max-w-xs truncate">${o.review_text || '-'}</td>
+                <td class="p-4">${o.platform_selected ? (platformBadge[o.platform_selected] || o.platform_selected) : '-'}</td>
+                <td class="p-4 text-xs">
+                  ${o.feedback_status === 'clicked_platform' ? '<span class="text-emerald-600 font-bold">✅ עבר לפרסם</span>' :
+                    o.feedback_status === 'negative_feedback' ? '<span class="text-rose-600 font-bold">🛑 משוב פנימי</span>' :
+                    '<span class="text-slate-400">⏳ נשלח</span>'}
+                </td>
+              </tr>
+            `).join('');
+
+        const fBody = document.getElementById('feedbacksTableBody');
+        fBody.innerHTML = fList.length === 0
+          ? `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">אין משובים שליליים בטיפול. מצוין!</td></tr>`
+          : fList.map(f => `
+              <tr class="hover:bg-slate-50/80 transition">
+                <td class="p-4 font-bold text-slate-900">${f.customer_name}</td>
+                <td class="p-4 text-slate-600">${f.businesses?.name || '-'}</td>
+                <td class="p-4"><span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs border border-slate-200">${f.issue_type}</span></td>
+                <td class="p-4 text-xs text-slate-600">${f.feedback_text}</td>
+                <td class="p-4"><span class="text-xs px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 font-semibold border border-rose-200">${f.status || 'pending'}</span></td>
+              </tr>
+            `).join('');
+
+      } catch (err) {
+        console.error("שגיאה בטעינת הנתונים:", err);
+        grid.innerHTML = `<p class="text-rose-600 text-sm col-span-full text-center py-8">שגיאה בטעינת הנתונים: ${err.message}</p>`;
+      }
+    }
+
+    function openQrModal(bizId) {
+      const biz = allBusinesses.find(b => b.id === bizId);
+      if (!biz) return;
+
+      const basePath = window.location.origin + window.location.pathname.replace('dashboard.html', 'review-bridge.html');
+      currentQrUrl = `${basePath}?biz_id=${biz.id}&source=qr`;
+      currentQrBizName = biz.name;
+
+      document.getElementById('qrBizName').textContent = biz.name;
+      const container = document.getElementById('qrcodeContainer');
+      container.innerHTML = "";
+
+      new QRCode(container, {
+        text: currentQrUrl,
+        width: 180,
+        height: 180,
+        colorDark: "#1e293b",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      const modal = document.getElementById('qrModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeQrModal() {
+      const modal = document.getElementById('qrModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function downloadQrImage() {
+      const img = document.querySelector('#qrcodeContainer img');
+      const canvas = document.querySelector('#qrcodeContainer canvas');
+      const dataUrl = img ? img.src : (canvas ? canvas.toDataURL("image/png") : null);
+      if (!dataUrl) return;
+
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `QR-${currentQrBizName}.png`;
+      a.click();
+    }
+
+    function copyDirectQrLink() {
+      navigator.clipboard.writeText(currentQrUrl);
+      alert("הקישור לדף המשוב הועתק בהצלחה!");
+    }
+
+    function openModalForNew() {
+      document.getElementById('modalTitle').textContent = 'הוספת עסק חדש';
+      document.getElementById('businessForm').reset();
+      document.getElementById('editBizId').value = '';
+      const m = document.getElementById('businessModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function openModalForEdit(bizId) {
+      const biz = allBusinesses.find(b => b.id === bizId);
+      if (!biz) return;
+
+      document.getElementById('modalTitle').textContent = `עריכת עסק: ${biz.name}`;
+      document.getElementById('editBizId').value = biz.id;
+      document.getElementById('bizName').value = biz.name || '';
+      document.getElementById('bizGoogleUrl').value = biz.google_review_url || '';
+      document.getElementById('bizEasyUrl').value = biz.easy_review_url || '';
+      document.getElementById('bizFacebookUrl').value = biz.facebook_review_url || '';
+      document.getElementById('bizWhatsapp').value = biz.manager_whatsapp || '';
+      document.getElementById('bizCoupon').value = biz.coupon_code || 'THANKYOU10';
+
+      const m = document.getElementById('businessModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeModal() {
+      const m = document.getElementById('businessModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    async function handleSaveBusiness(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'שומר...';
+
+      const editId = document.getElementById('editBizId').value;
+      const payload = {
+        name: document.getElementById('bizName').value.trim(),
+        google_review_url: document.getElementById('bizGoogleUrl').value.trim(),
+        easy_review_url: document.getElementById('bizEasyUrl').value.trim() || null,
+        facebook_review_url: document.getElementById('bizFacebookUrl').value.trim() || null,
+        manager_whatsapp: document.getElementById('bizWhatsapp').value.trim(),
+        coupon_code: document.getElementById('bizCoupon').value.trim() || 'THANKYOU10'
+      };
+
+      try {
+        if (editId) {
+          const { error } = await supabaseClient.from('businesses').update(payload).eq('id', editId);
+          if (error) throw error;
+        } else {
+          const { error } = await supabaseClient.from('businesses').insert([payload]);
+          if (error) throw error;
+        }
+        closeModal();
+        await loadDashboardData();
+      } catch (err) {
+        alert("שגיאה בשמירת העסק: " + err.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'שמור עסק';
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeQrModal();
+        closeModal();
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', loadDashboardData);
+  </script>
+</body>
+</html>

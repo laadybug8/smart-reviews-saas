@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>שליחת בקשת ביקורת | ReviewFlow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap">
+  <style> body { font-family: 'Heebo', sans-serif; } </style>
+</head>
+<body class="bg-slate-900 min-h-screen text-slate-100 flex items-center justify-center p-4">
+
+  <main class="w-full max-w-md bg-slate-800 border border-slate-700 rounded-3xl shadow-2xl overflow-hidden">
+    <div class="h-2 bg-gradient-to-r from-emerald-400 via-indigo-500 to-rose-500"></div>
+
+    <div class="p-6 space-y-6">
+      <div class="text-center space-y-1">
+        <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">שליחה מהירה ללקוח</span>
+        <h1 class="text-2xl font-black text-white" id="bizTitle">טוען עסק...</h1>
+        <p class="text-xs text-slate-400">ההודעה תיפתח בוואטסאפ שלך מוכנה לשליחה</p>
+      </div>
+
+      <form onsubmit="handleSendWhatsApp(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">שם הלקוח/ה *</label>
+          <input type="text" id="custName" required placeholder="למשל: מיכל" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">טלפון נייד של הלקוח/ה *</label>
+          <input type="tel" id="custPhone" required placeholder="050-1234567" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">תצוגה מקדימה להודעה:</label>
+          <textarea id="msgPreview" rows="4" class="w-full bg-slate-900/70 border border-slate-700 rounded-xl p-3 text-xs text-slate-300 leading-relaxed outline-none"></textarea>
+        </div>
+
+        <button type="submit" id="sendBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition text-white font-black rounded-2xl text-base shadow-lg flex items-center justify-center gap-2">
+          <span>פתח וואטסאפ ושלח</span>
+          <span>💬 ↗</span>
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://pykdojfaukaiikjgirnk.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_i2YcUPaFRLfjBie8QTdO3A_XBZTfGqq";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const businessId = urlParams.get('biz_id');
+    let currentBiz = null;
+
+    async function init() {
+      if (!businessId) {
+        document.getElementById('bizTitle').textContent = "חסר מזהה עסק בקישור";
+        return;
+      }
+      const { data: biz } = await supabaseClient.from('businesses').select('*').eq('id', businessId).single();
+      if (biz) {
+        currentBiz = biz;
+        document.getElementById('bizTitle').textContent = biz.name;
+        updatePreview();
+      }
+    }
+
+    function getBaseBridgeUrl(orderId, customerName) {
+      const basePath = window.location.origin + window.location.pathname.replace('share.html', 'review-bridge.html');
+      return `${basePath}?biz_id=${businessId}&order_id=${orderId}&name=${encodeURIComponent(customerName)}`;
+    }
+
+    function updatePreview() {
+      const name = document.getElementById('custName').value.trim() || 'מיכל';
+      const bizName = currentBiz ? currentBiz.name : 'העסק שלנו';
+      const sampleLink = getBaseBridgeUrl('NEW', name);
+      document.getElementById('msgPreview').value =
+        `היי ${name} ❤️ תודה שבחרת ב-${bizName}! רציתי לוודא שהיית מרוצה מהשירות שלנו. אשמח ממש לשמוע איך הייתה החוויה שלך (זה לוקח 10 שניות):\n${sampleLink}`;
+    }
+
+    document.getElementById('custName').addEventListener('input', updatePreview);
+
+    function formatIsraeliPhone(phone) {
+      let digits = phone.replace(/\D/g, '');
+      if (digits.startsWith('0')) {
+        digits = '972' + digits.substring(1);
+      }
+      return digits;
+    }
+
+    async function handleSendWhatsApp(e) {
+      e.preventDefault();
+      if (!businessId) return alert("שגיאה: חסר מזהה עסק");
+
+      const name = document.getElementById('custName').value.trim();
+      const rawPhone = document.getElementById('custPhone').value.trim();
+      const intlPhone = formatIsraeliPhone(rawPhone);
+
+      // 1. שמירת הבקשה ב-Supabase כדי שנוכל לעקוב אחריה
+      const { data: insertedOrder, error } = await supabaseClient
+        .from('orders')
+        .insert([{
+          business_id: businessId,
+          customer_name: name,
+          customer_phone: rawPhone,
+          feedback_status: 'sent'
+        }])
+        .select()
+        .single();
+
+      const orderId = insertedOrder ? insertedOrder.id : 'DIRECT';
+      const realLink = getBaseBridgeUrl(orderId, name);
+      const bizName = currentBiz ? currentBiz.name : '';
+
+      const finalMessage = `היי ${name} ❤️ תודה שבחרת ב-${bizName}! רציתי לוודא שהיית מרוצה מהשירות שלנו. אשמח ממש לשמוע איך הייתה החוויה שלך (זה לוקח 10 שניות):\n${realLink}`;
+
+      // 2. פתיחת הוואטסאפ של בעל העסק
+      const waUrl = `https://wa.me/${intlPhone}?text=${encodeURIComponent(finalMessage)}`;
+      window.open(waUrl, '_blank');
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
