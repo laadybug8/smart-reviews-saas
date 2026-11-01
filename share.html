@@ -3,47 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>שליחת בקשת ביקורת | ReviewFlow</title>
+  <title>שליחת הודעה ללקוח | העסק הקטן והמוצלח שלי</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap">
-  <style> body { font-family: 'Heebo', sans-serif; } </style>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap">
+  <style>
+    body { font-family: 'Heebo', sans-serif; background-color: #f4f8fb; color: #1e3a8a; }
+    .blue-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); }
+    .blue-card { background: #ffffff; border: 2px solid #bfdbfe; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.08); }
+    .blue-text { color: #1e40af; }
+  </style>
 </head>
-<body class="bg-slate-900 min-h-screen text-slate-100 flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4 selection:bg-blue-100 selection:text-blue-900">
 
-  <main class="w-full max-w-md bg-slate-800 border border-slate-700 rounded-3xl shadow-2xl overflow-hidden">
-    <div class="h-2 bg-gradient-to-r from-emerald-400 via-indigo-500 to-rose-500"></div>
+  <div class="blue-card rounded-3xl w-full max-w-lg p-8 space-y-6">
+    <div class="text-center space-y-2 border-b border-blue-100 pb-5">
+      <div class="w-12 h-12 rounded-2xl blue-gradient mx-auto flex items-center justify-center text-white font-black text-xl shadow-md">✦</div>
+      <h1 class="text-xl font-black blue-text" id="bizTitle">שליחת הודעה ללקוח</h1>
+      <p class="text-xs text-blue-600/70">בחרי תבנית מוכנה, ערכי לפי הצורך, ושלחי לוואטסאפ בקליק</p>
+    </div>
 
-    <div class="p-6 space-y-6">
-      <div class="text-center space-y-1">
-        <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">שליחה מהירה ללקוח</span>
-        <h1 class="text-2xl font-black text-white" id="bizTitle">טוען עסק...</h1>
-        <p class="text-xs text-slate-400">ההודעה תיפתח בוואטסאפ שלך מוכנה לשליחה</p>
+    <!-- תבניות מוכנות מראש לבחירה מהירה -->
+    <div class="space-y-2">
+      <label class="block text-xs font-bold text-blue-900">בחר תבנית מהירה:</label>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <button type="button" onclick="applyTemplate(1)" class="p-2.5 bg-blue-50/50 hover:bg-blue-100 text-blue-900 rounded-xl border border-blue-200 transition text-right font-medium">
+          🌟 תבנית סטנדרטית חמה
+        </button>
+        <button type="button" onclick="applyTemplate(2)" class="p-2.5 bg-blue-50/50 hover:bg-blue-100 text-blue-900 rounded-xl border border-blue-200 transition text-right font-medium">
+          🎁 תבנית עם מתנה/הטבה
+        </button>
+        <button type="button" onclick="applyTemplate(3)" class="p-2.5 bg-blue-50/50 hover:bg-blue-100 text-blue-900 rounded-xl border border-blue-200 transition text-right font-medium">
+          ☕ תבנית קצרה וידידותית
+        </button>
+        <button type="button" onclick="applyTemplate(4)" class="p-2.5 bg-blue-50/50 hover:bg-blue-100 text-blue-900 rounded-xl border border-blue-200 transition text-right font-medium">
+          💎 תבנית יוקרתית מעוצבת
+        </button>
+      </div>
+    </div>
+
+    <form id="shareForm" onsubmit="sendWhatsApp(event)" class="space-y-4 pt-2">
+      <div>
+        <label class="block text-xs font-bold text-blue-900 mb-1.5">שם הלקוח/ה *</label>
+        <input type="text" id="customerName" required placeholder="לדוגמה: רון" class="w-full bg-blue-50/30 border border-blue-200 rounded-2xl px-4 py-3 text-sm text-blue-900 focus:border-blue-600 outline-none transition">
       </div>
 
-      <form onsubmit="handleSendWhatsApp(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-300 mb-1">שם הלקוח/ה *</label>
-          <input type="text" id="custName" required placeholder="למשל: מיכל" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 outline-none">
-        </div>
+      <div>
+        <label class="block text-xs font-bold text-blue-900 mb-1.5">מספר טלפון (וואטסאפ) *</label>
+        <input type="tel" id="customerPhone" required placeholder="0501234567" class="w-full bg-blue-50/30 border border-blue-200 rounded-2xl px-4 py-3 text-sm text-blue-900 focus:border-blue-600 outline-none transition">
+      </div>
 
-        <div>
-          <label class="block text-xs font-bold text-slate-300 mb-1">טלפון נייד של הלקוח/ה *</label>
-          <input type="tel" id="custPhone" required placeholder="050-1234567" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 outline-none">
+      <div>
+        <div class="flex justify-between items-center mb-1.5">
+          <label class="block text-xs font-bold text-blue-900">נוסח ההודעה (ניתן לעריכה חופשית)</label>
+          <button type="button" onclick="saveCustomTemplate()" class="text-[11px] text-blue-600 hover:underline font-bold">💾 שמור כתבנית קבועה שלי</button>
         </div>
+        <textarea id="messageText" rows="5" required class="w-full bg-blue-50/30 border border-blue-200 rounded-2xl p-4 text-sm text-blue-900 focus:border-blue-600 outline-none transition leading-relaxed"></textarea>
+        <p class="text-[11px] text-blue-400 mt-1" id="saveStatus">הקישור האישי ללקוח יתווסף אוטומטית בסוף ההודעה.</p>
+      </div>
 
-        <div>
-          <label class="block text-xs font-bold text-slate-300 mb-1">תצוגה מקדימה להודעה:</label>
-          <textarea id="msgPreview" rows="4" class="w-full bg-slate-900/70 border border-slate-700 rounded-xl p-3 text-xs text-slate-300 leading-relaxed outline-none"></textarea>
-        </div>
-
-        <button type="submit" id="sendBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition text-white font-black rounded-2xl text-base shadow-lg flex items-center justify-center gap-2">
-          <span>פתח וואטסאפ ושלח</span>
-          <span>💬 ↗</span>
-        </button>
-      </form>
-    </div>
-  </main>
+      <button type="submit" class="w-full py-4 blue-gradient hover:opacity-95 text-white rounded-2xl text-base font-black shadow-lg shadow-blue-500/20 transition transform active:scale-95 flex items-center justify-center gap-2">
+        <span>💬 פתח וואטסאפ ושליחת הודעה</span>
+      </button>
+    </form>
+  </div>
 
   <script>
     const SUPABASE_URL = "https://pykdojfaukaiikjgirnk.supabase.co";
@@ -51,77 +74,105 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const urlParams = new URLSearchParams(window.location.search);
-    const businessId = urlParams.get('biz_id');
+    const bizId = urlParams.get('biz_id');
+
     let currentBiz = null;
 
-    async function init() {
-      if (!businessId) {
-        document.getElementById('bizTitle').textContent = "חסר מזהה עסק בקישור";
+    const templates = {
+      1: (name) => `היי! היה תענוג לארח אותך היום ב-${name}. נשמח מאוד לשמוע איך הייתה החוויה שלך אצלנו ולדעת מה אפשר לשפר. מוזמן ללחוץ על הקישור ולשתף אותנו בשנייה:`,
+      2: (name) => `היי! תחרות פנק אותך ב-${name} הייתה חוויה. כדי להמשיך להשתפר ולפנק בהטבה הבאה, נשמח מאוד לשמוע את דעתך בקישור הבא:`,
+      3: (name) => `היי, תודה שבחרת ${name}! נשמח לשמוע חוות דעת קצרה בקישור הבא כדי שנוכל להשתפר תמיד:`,
+      4: (name) => `שלום רב ממלכת ${name}. אנו מקווים שנהנית מהשירות שלנו. נשמח להתרשמותך הקצרה בקישור הבא:`
+    };
+
+    async function initPage() {
+      if (!bizId) {
+        alert("שגיאה: לא צוין מזהה עסק בקישור.");
         return;
       }
-      const { data: biz } = await supabaseClient.from('businesses').select('*').eq('id', businessId).single();
-      if (biz) {
-        currentBiz = biz;
-        document.getElementById('bizTitle').textContent = biz.name;
-        updatePreview();
+
+      try {
+        const { data, error } = await supabaseClient.from('businesses').select('*').eq('id', bizId).single();
+        if (error) throw error;
+        currentBiz = data;
+
+        document.getElementById('bizTitle').textContent = `שליחת הודעה מטעם ${currentBiz.name}`;
+        
+        if (currentBiz.custom_message) {
+          document.getElementById('messageText').value = currentBiz.custom_message;
+        } else {
+          document.getElementById('messageText').value = templates[1](currentBiz.name);
+        }
+
+      } catch (err) {
+        console.error("שגיאה בטעינת העסק:", err);
+        alert("לא ניתן לטעון את נתוני העסק.");
       }
     }
 
-    function getBaseBridgeUrl(orderId, customerName) {
-      const basePath = window.location.origin + window.location.pathname.replace('share.html', 'review-bridge.html');
-      return `${basePath}?biz_id=${businessId}&order_id=${orderId}&name=${encodeURIComponent(customerName)}`;
-    }
-
-    function updatePreview() {
-      const name = document.getElementById('custName').value.trim() || 'מיכל';
-      const bizName = currentBiz ? currentBiz.name : 'העסק שלנו';
-      const sampleLink = getBaseBridgeUrl('NEW', name);
-      document.getElementById('msgPreview').value =
-        `היי ${name} ❤️ תודה שבחרת ב-${bizName}! רציתי לוודא שהיית מרוצה מהשירות שלנו. אשמח ממש לשמוע איך הייתה החוויה שלך (זה לוקח 10 שניות):\n${sampleLink}`;
-    }
-
-    document.getElementById('custName').addEventListener('input', updatePreview);
-
-    function formatIsraeliPhone(phone) {
-      let digits = phone.replace(/\D/g, '');
-      if (digits.startsWith('0')) {
-        digits = '972' + digits.substring(1);
+    function applyTemplate(id) {
+      if (!currentBiz) return;
+      if (templates[id]) {
+        document.getElementById('messageText').value = templates[id](currentBiz.name);
       }
-      return digits;
     }
 
-    async function handleSendWhatsApp(e) {
+    async function saveCustomTemplate() {
+      if (!currentBiz) return;
+      const newMsg = document.getElementById('messageText').value.trim();
+      const statusEl = document.getElementById('saveStatus');
+
+      try {
+        const { error } = await supabaseClient
+          .from('businesses')
+          .update({ custom_message: newMsg })
+          .eq('id', currentBiz.id);
+
+        if (error) throw error;
+
+        statusEl.textContent = "✅ התבנית נשמרה בהצלחה כתבנית הקבועה שלך!";
+        statusEl.className = "text-[11px] text-blue-700 font-bold mt-1";
+        setTimeout(() => {
+          statusEl.textContent = "הקישור האישי ללקוח יתווסף אוטומטית בסוף ההודעה.";
+          statusEl.className = "text-[11px] text-blue-400 mt-1";
+        }, 3000);
+
+      } catch (err) {
+        alert("שגיאה בשמירת התבנית: " + err.message);
+      }
+    }
+
+    async function sendWhatsApp(e) {
       e.preventDefault();
-      if (!businessId) return alert("שגיאה: חסר מזהה עסק");
+      if (!currentBiz) return;
 
-      const name = document.getElementById('custName').value.trim();
-      const rawPhone = document.getElementById('custPhone').value.trim();
-      const intlPhone = formatIsraeliPhone(rawPhone);
+      const customerName = document.getElementById('customerName').value.trim();
+      let customerPhone = document.getElementById('customerPhone').value.trim();
+      const customMessage = document.getElementById('messageText').value.trim();
 
-      // 1. שמירת הבקשה ב-Supabase כדי שנוכל לעקוב אחריה
-      const { data: insertedOrder, error } = await supabaseClient
-        .from('orders')
-        .insert([{
-          business_id: businessId,
-          customer_name: name,
-          customer_phone: rawPhone,
+      if (customerPhone.startsWith('0')) {
+        customerPhone = '972' + customerPhone.substring(1);
+      }
+
+      const bridgeUrl = `${window.location.origin}${window.location.pathname.replace('share.html', 'review-bridge.html')}?biz_id=${currentBiz.id}&name=${encodeURIComponent(customerName)}`;
+
+      try {
+        await supabaseClient.from('orders').insert([{
+          business_id: currentBiz.id,
+          customer_name: customerName,
           feedback_status: 'sent'
-        }])
-        .select()
-        .single();
+        }]);
+      } catch (err) {
+        console.error("שגיאה בשמירת האינטראקציה:", err);
+      }
 
-      const orderId = insertedOrder ? insertedOrder.id : 'DIRECT';
-      const realLink = getBaseBridgeUrl(orderId, name);
-      const bizName = currentBiz ? currentBiz.name : '';
+      const fullText = `${customMessage}\n${bridgeUrl}`;
+      const whatsappUrl = `https://wa.me/${customerPhone}?text=${encodeURIComponent(fullText)}`;
 
-      const finalMessage = `היי ${name} ❤️ תודה שבחרת ב-${bizName}! רציתי לוודא שהיית מרוצה מהשירות שלנו. אשמח ממש לשמוע איך הייתה החוויה שלך (זה לוקח 10 שניות):\n${realLink}`;
-
-      // 2. פתיחת הוואטסאפ של בעל העסק
-      const waUrl = `https://wa.me/${intlPhone}?text=${encodeURIComponent(finalMessage)}`;
-      window.open(waUrl, '_blank');
+      window.open(whatsappUrl, '_blank');
     }
 
-    window.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('DOMContentLoaded', initPage);
   </script>
 </body>
 </html>
